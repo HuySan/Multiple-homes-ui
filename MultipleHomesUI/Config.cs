@@ -20,8 +20,8 @@ namespace MultipleHomesUI
             delay = 5;
             cooldown = 30;
             maxHomes = 7;
-            effectId = 7390;
-            effectKey = 7390;
+            effectId = 7394;
+            effectKey = 7394;
             setHomeId = 288;
         }
     }

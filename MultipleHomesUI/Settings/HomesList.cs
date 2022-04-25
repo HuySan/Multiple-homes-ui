@@ -8,6 +8,6 @@ namespace MultipleHomesUI.HomeSettings
 {
     public class HomesList
     {
-        public Dictionary<ulong,  List<PlayerHome>> Homes = new Dictionary<ulong, List<PlayerHome>>();
+        public Dictionary<ulong,  List<PlayerHome>> homes = new Dictionary<ulong, List<PlayerHome>>();
     }
 }

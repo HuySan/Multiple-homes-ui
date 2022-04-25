@@ -84,9 +84,9 @@
     <Compile Include="Config.cs" />
     <Compile Include="Controllers\CooldownController.cs" />
     <Compile Include="Controllers\HomesController.cs" />
+    <Compile Include="Patches\TryCheckPhysicHome.cs" />
     <Compile Include="Settings\HomesList.cs" />
     <Compile Include="Settings\PlayerHome.cs" />
-    <Compile Include="Controllers\InputController.cs" />
     <Compile Include="HomesManager.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

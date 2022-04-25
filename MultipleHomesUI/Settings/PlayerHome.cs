@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SDG.Unturned;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,13 +11,13 @@ namespace MultipleHomesUI.HomeSettings
     public class PlayerHome
     {
         public string homeId;
-        public Vector3 positionPlayer;
+        public Vector3 position;
         public string color;
 
-        public PlayerHome(string homeId, Vector3 positionPlayer, string color)
+        public PlayerHome(string homeId, Vector3 position, string color)
         {
             this.homeId = homeId;
-            this.positionPlayer = positionPlayer;
+            this.position = position;
             this.color = color;
         }
         public PlayerHome() { }

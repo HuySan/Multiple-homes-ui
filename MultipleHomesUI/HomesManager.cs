@@ -11,6 +11,7 @@ using Rocket.Unturned.Player;
 using UnityEngine;
 using SDG.Unturned;
 using Rocket.Unturned.Chat;
+using MultipleHomesUI.Patches;
 
 namespace MultipleHomesUI
 {
@@ -19,35 +20,15 @@ namespace MultipleHomesUI
         private static ushort _effectId = Plugin.instance.Configuration.Instance.effectId;
         private static short _effectKey = Plugin.instance.Configuration.Instance.effectKey;
 
-        public static void SetHome(this UnturnedPlayer uplayer)
-        {
-            if(GetPlayerHomeCount(uplayer) >= Plugin.instance.Configuration.Instance.maxHomes)
-            {
-                UnturnedChat.Say(uplayer, "Превышен лимит спалок");  
-                return;
-            }
-            HomesController.CreateHome(uplayer, uplayer.Position);
-        }
-
-        static int GetPlayerHomeCount(this UnturnedPlayer uplayer)
-        {
-            if (HomesController.HomesList.Homes.ContainsKey(uplayer.CSteamID.m_SteamID))
-            {
-                return HomesController.HomesList.Homes[uplayer.CSteamID.m_SteamID].Count;
-            }
-            return 0;
-        }
-
         public static void DeleteHome(this UnturnedPlayer uplayer, ref string destroyHomeId)
         {
-            HomesController.DeletePlayerHome(uplayer, destroyHomeId);
+            HomesController.DeletePlayerHome(uplayer, destroyHomeId, false);
             UpdateUi(uplayer);
         }
 
-        //Вызывается когда юзер нажмёт на нужный спальник в ui
+        //Вызывается когда юзер нажмёт на иконку спальника
         public static void TeleportationToHome(this UnturnedPlayer uplayer, string name)
-        {
-            //Сделаем тут проверку существует ли спальник         
+        {    
             HomesController.PlayerTeleportationToHome(uplayer, name);
         }
         
@@ -57,23 +38,53 @@ namespace MultipleHomesUI
             CallindUi(uplayer);
         }
 
+        public static void CloseUi(this UnturnedPlayer uplayer)
+        {
+            EffectManager.askEffectClearByID(_effectId, uplayer.SteamPlayer().transportConnection);
+            ShowDefaultUi(uplayer.Player);
+        }
+
+        public static void HideDefaultUi(this Player player)
+        {
+            player.enablePluginWidgetFlag(EPluginWidgetFlags.Modal);
+            player.disablePluginWidgetFlag(EPluginWidgetFlags.Default);
+            
+        }
+
+        public static void ShowDefaultUi(this Player player)
+        {
+            player.disablePluginWidgetFlag(EPluginWidgetFlags.Modal);
+            player.enablePluginWidgetFlag(EPluginWidgetFlags.Default);
+            
+        }
+
         public static  void CallindUi(this UnturnedPlayer uplayer)
         {
-            string[] HomesId = HomesController.GetPlayerHomes(uplayer);
-            string[] Colors = HomesController.GetPlayerColors(uplayer);
+            string[] homesId = HomesController.GetPlayerHomes(uplayer);
+            string[] colors = HomesController.GetPlayerColors(uplayer);
+            TryCheckPhysicHome checkHome = new TryCheckPhysicHome();
             int i = 0;
-            EffectManager.sendUIEffect(_effectId, _effectKey, uplayer.SteamPlayer().transportConnection, true);
-            //Сделать активными спалки, которые есть у юзера
-            foreach (var id in HomesId)
-            {
-                EffectManager.sendUIEffectVisibility(_effectKey, uplayer.SteamPlayer().transportConnection, true, id, true);                
-            }
 
-            foreach (var color in Colors)
+            HideDefaultUi(uplayer.Player);
+
+            //Удаляем спальники из словаря, которые были уничтожены физическим путём
+            if (checkHome.CompaireHomesPositions(uplayer))
+                UnturnedChat.Say(uplayer, "Некоторые спальники были уничтожены другими игроками или вами");
+
+
+            EffectManager.sendUIEffect(_effectId, _effectKey, uplayer.SteamPlayer().transportConnection, true);
+
+            //Делаем иконки спалок активными, которые есть у юзера
+            foreach (var id in homesId)
+                EffectManager.sendUIEffectVisibility(_effectKey, uplayer.SteamPlayer().transportConnection, true, id, true);                
+
+            foreach (var color in colors)
             {
-                EffectManager.sendUIEffectImageURL(_effectKey, uplayer.SteamPlayer().transportConnection, true, HomesController.GiveColor(i), $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/{color}.png");
+                EffectManager.sendUIEffectImageURL(_effectKey, uplayer.SteamPlayer().transportConnection, true, "Home" + i, $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/{color}.png");
                 i++;
             }
+
+            HomesController.ShowAvailableHomes(uplayer);
         }
     }
 }

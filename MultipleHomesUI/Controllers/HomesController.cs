@@ -15,6 +15,7 @@ using System.Runtime.Serialization;
 using MultipleHomesUI.Controllers;
 using Rocket.Unturned.Chat;
 using System.Collections;
+using MultipleHomesUI.Patches;
 
 namespace MultipleHomesUI
 {
@@ -23,6 +24,7 @@ namespace MultipleHomesUI
         private static string _homesDirectory => Path.Combine(Plugin.instance.Directory, "homes.json");
         private static HomesList _homesList;
         private static int _delay = Plugin.instance.Configuration.Instance.delay;
+        private static short _key = Plugin.instance.Configuration.Instance.effectKey;
 
         public static HomesList HomesList//Возвращает значение словаря с homes
         {
@@ -46,37 +48,55 @@ namespace MultipleHomesUI
             }
         }
         
-
-        public static void  CreateHome(this UnturnedPlayer uplayer, Vector3 position)
+        public static void ShowAvailableHomes(this UnturnedPlayer uplayer)
         {
-            string homeId;
             int homeCount;
-            
-            if (HomesList.Homes.ContainsKey(uplayer.CSteamID.m_SteamID))
-            {
-                homeCount = HomesList.Homes[uplayer.CSteamID.m_SteamID].Count;
-                homeId = "Home" + homeCount;
-                HomesList.Homes[uplayer.CSteamID.m_SteamID].Add(new PlayerHome(homeId, position, GiveColor(homeCount)));
-                EffectManager.sendUIEffectVisibility(Plugin.instance.Configuration.Instance.effectKey, uplayer.SteamPlayer().transportConnection, true, homeId, true);
-                EffectManager.sendUIEffectImageURL(Plugin.instance.Configuration.Instance.effectKey, uplayer.SteamPlayer().transportConnection, true, GiveColor(homeCount), $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/{GiveColor(homeCount)}.png");
-            }
-            else
-            {
-                HomesList.Homes.Add(uplayer.CSteamID.m_SteamID, new List<PlayerHome> { new PlayerHome("Home0", position, "Blue") });
-                EffectManager.sendUIEffectVisibility(Plugin.instance.Configuration.Instance.effectKey, uplayer.SteamPlayer().transportConnection, true, "Home0", true);
-                EffectManager.sendUIEffectImageURL(Plugin.instance.Configuration.Instance.effectKey, uplayer.SteamPlayer().transportConnection, true, "Blue", $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/Blue.png");
-            }
+            string homeId;
+            int bedCount = 0;
 
-            //Так же создаём спалку физическую, если есть необходимое кол-во ткани, иначе return
-            SetPhysicalHome(uplayer);
-            Save();            
-        }
+            foreach (BarricadeRegion region in BarricadeManager.regions)
+            {
+                foreach(BarricadeDrop drop in region.drops)
+                {
+                   InteractableBed interactableBed = drop.interactable as InteractableBed;
 
-        public static void SetPhysicalHome(this UnturnedPlayer uplayer)
-        {
-            var barricade = new Barricade((ItemBarricadeAsset)Assets.find(EAssetType.ITEM, 288));
-            if (BarricadeManager.tryGetPlant(uplayer.Player.transform, out byte _, out byte _, out ushort _,  out BarricadeRegion region))
-                BarricadeManager.dropNonPlantedBarricade(barricade, uplayer.Position, Quaternion.Euler(-90f, uplayer.Rotation, 0f), uplayer.CSteamID.m_SteamID, uplayer.Player.quests.groupID.m_SteamID);
+                    if (interactableBed == null)
+                        continue;
+
+                    if (drop.GetServersideData().owner != uplayer.CSteamID.m_SteamID)                   
+                        continue;
+
+                    bedCount++;
+
+                    if (bedCount > Plugin.instance.Configuration.Instance.maxHomes)
+                    {
+                        DestroyPhysicalHome(interactableBed);
+                        UnturnedChat.Say(uplayer, "Превышено кол-во допустимых спальников, поэтому последние добавленные были удалены");                       
+                        return;
+                    }
+
+
+                    if (HomesList.homes.ContainsKey(uplayer.CSteamID.m_SteamID))
+                    {
+                        if (HomesList.homes[uplayer.CSteamID.m_SteamID].Exists(x => x.position == interactableBed.transform.position))
+                            continue;
+
+                        homeCount = HomesList.homes[uplayer.CSteamID.m_SteamID].Count;
+                        homeId = "Home" + homeCount;
+
+                        HomesList.homes[uplayer.CSteamID.m_SteamID].Add(new PlayerHome(homeId, interactableBed.transform.position, GiveColor(homeCount)));
+                        EffectManager.sendUIEffectVisibility(_key, uplayer.SteamPlayer().transportConnection, true, homeId, true);
+                        EffectManager.sendUIEffectImageURL(_key, uplayer.SteamPlayer().transportConnection, true, homeId, $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/{GiveColor(homeCount)}.png");
+                    }
+                    else
+                    {
+                        HomesList.homes.Add(uplayer.CSteamID.m_SteamID, new List<PlayerHome> { new PlayerHome("Home0", interactableBed.transform.position, "Blue") });
+                        EffectManager.sendUIEffectVisibility(_key, uplayer.SteamPlayer().transportConnection, true, "Home0", true);
+                        EffectManager.sendUIEffectImageURL(_key, uplayer.SteamPlayer().transportConnection, true, "Home0", $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/Blue.png");
+                    }
+                    Save();
+                }
+            }
         }
 
         //Будет возвращать цвет спалки взависимости от кол-ва спалок в homes
@@ -86,10 +106,10 @@ namespace MultipleHomesUI
             return Color[homesCount];
         }
 
-        public static void DeletePlayerHome(this UnturnedPlayer player, string destroyHomeId)
+        public static void DeletePlayerHome(this UnturnedPlayer player, string destroyHomeId, bool isDestroyer)
         {           
             //заполняем брешь
-            foreach(var id in HomesList.Homes[player.CSteamID.m_SteamID])
+            foreach(var id in HomesList.homes[player.CSteamID.m_SteamID])
             {
                 if (int.Parse(destroyHomeId.Substring(11)) < int.Parse(id.homeId.Substring(4)))
                 {
@@ -98,22 +118,60 @@ namespace MultipleHomesUI
                 }
             }
 
-            var itemForRemove = HomesList.Homes[player.CSteamID.m_SteamID].FirstOrDefault(r => r.homeId.ToLower() == destroyHomeId.Substring(7).ToLower());
-            HomesList.Homes[player.CSteamID.m_SteamID].Remove(itemForRemove);//удаляем спальник по ид
+            var idForRemove = HomesList.homes[player.CSteamID.m_SteamID].FirstOrDefault(r => r.homeId.ToLower() == destroyHomeId.Substring(7).ToLower());
+            var positionForRemove = HomesList.homes[player.CSteamID.m_SteamID].FirstOrDefault(r => r.position == idForRemove.position);
+
+            if(!isDestroyer)
+                DestroyPhysicalHomeByPosition(positionForRemove.position);
+            HomesList.homes[player.CSteamID.m_SteamID].Remove(idForRemove);
+
             Save();
+        }
+
+        public static void DestroyPhysicalHomeByPosition(Vector3 position)
+        {
+            foreach (BarricadeRegion region in BarricadeManager.regions)
+            {
+                foreach (BarricadeDrop drop in region.drops)
+                {
+                    InteractableBed interactableBed = drop.interactable as InteractableBed;
+                    if (interactableBed == null)
+                        continue;
+                    if (interactableBed.transform.position != position)
+                        continue;
+
+                    if (!BarricadeManager.tryGetRegion(interactableBed.transform, out byte x, out byte y, out ushort plant, out _))
+                        return;
+
+                    BarricadeManager.destroyBarricade(drop, x, y, plant);
+                    return;
+                }
+            }
+        }   
+
+        public static void DestroyPhysicalHome(InteractableBed interactableBed)
+        {
+            BarricadeDrop drop = BarricadeManager.FindBarricadeByRootTransform(interactableBed.transform);
+            if (drop == null)
+                return;
+
+            if (!BarricadeManager.tryGetRegion(interactableBed.transform, out byte x, out byte y, out ushort plant, out _))
+                return;
+
+            BarricadeManager.destroyBarricade(drop, x, y, plant);
         }
 
         public static  string[] GetPlayerHomes(this UnturnedPlayer uplayer)
         {
-            if (HomesList.Homes.ContainsKey(uplayer.CSteamID.m_SteamID))
-                return HomesList.Homes[uplayer.CSteamID.m_SteamID].Select(x => x.homeId).ToArray();
+            if (HomesList.homes.ContainsKey(uplayer.CSteamID.m_SteamID))
+                return HomesList.homes[uplayer.CSteamID.m_SteamID].Select(x => x.homeId).ToArray();
             return new string[0];
         }
 
         public static string[] GetPlayerColors(this UnturnedPlayer uplayer)
         {
-            if (HomesList.Homes.ContainsKey(uplayer.CSteamID.m_SteamID))
-                return HomesList.Homes[uplayer.CSteamID.m_SteamID].Select(x => x.color).ToArray();
+            if (HomesList.homes.ContainsKey(uplayer.CSteamID.m_SteamID))
+                return HomesList.homes[uplayer.CSteamID.m_SteamID].Select(x => x.color).ToArray();
 
             return new string[0];
         }
@@ -122,25 +180,31 @@ namespace MultipleHomesUI
         {             
             if (_delay != 0)
                 UnturnedChat.Say(uplayer, $"Вы будете телепортированы через {_delay} сек");
+            CooldownController.SetCooldown(uplayer, homeId);
             Plugin.instance.StartCoroutine(GoHome(uplayer, homeId));           
         }
+
 
         private static IEnumerator GoHome(this UnturnedPlayer uplayer,  string homeId)
         {
             yield return new WaitForSeconds(_delay);
-            
-            if (HomesList.Homes[uplayer.CSteamID.m_SteamID].Exists(x => x.homeId == homeId))
+            if (HomesList.homes[uplayer.CSteamID.m_SteamID].Exists(x => x.homeId == homeId))
             {
-                var res = HomesList.Homes[uplayer.CSteamID.m_SteamID].Where(x => x.homeId == homeId).ToList();
-                Vector3 homePosition = res[0].positionPlayer;
-                uplayer.Player.teleportToLocation(homePosition, uplayer.Rotation);
-                CooldownController.SetCooldown(uplayer, homeId);
+                var res = HomesList.homes[uplayer.CSteamID.m_SteamID].Where(x => x.homeId == homeId).ToList();
+                Vector3 homePosition = res[0].position;
+                try
+                {
+                    uplayer.Player.teleportToLocationUnsafe(homePosition, uplayer.Rotation);
+                }
+                catch(Exception ex)
+                {
+                    Rocket.Core.Logging.Logger.LogException(ex, "teleportation exception in coroutine 'GoHome'");
+                }
             }
         }
 
         public static void Save()
         {
-            Rocket.Core.Logging.Logger.Log("Сохранили");
             File.WriteAllText(_homesDirectory, JsonConvert.SerializeObject(HomesList, Formatting.Indented, new JsonSerializerSettings()
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore

@@ -11,13 +11,15 @@ using System.Threading.Tasks;
 using Steamworks;
 using MultipleHomesUI.Controllers;
 using MultipleHomesUI.HomeSettings;
+using UnityEngine;
+using System.Collections;
 
 namespace MultipleHomesUI
 {
     public class Plugin : RocketPlugin<Config>
     {
         public static Plugin instance;
-        private const string _CreateHome = "ButtonCreate";
+        private const string _CloseUi = "CloseUi";
         public Dictionary<CSteamID, Dictionary<string, DateTime>> cooldowns = new Dictionary<CSteamID, Dictionary<string, DateTime>>();
 
         protected override void Load()
@@ -32,10 +34,10 @@ namespace MultipleHomesUI
         private void ButtonClickerEvent(Player player, string buttonName)
         {
             UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
-
-            if(buttonName.ToLower() == _CreateHome.ToLower())
+            
+            if(buttonName.ToLower() == _CloseUi.ToLower())
             {
-                HomesManager.SetHome(uplayer);
+                HomesManager.CloseUi(uplayer);
                 return;
             }
 
@@ -43,19 +45,16 @@ namespace MultipleHomesUI
             {              
                 if (buttonName.ToLower() == $"home{i}")
                 {
-                    if (CooldownController.IsColldown(uplayer, ref buttonName))
+                    if (CooldownController.IsColldown(uplayer, ref buttonName, out _))
                         return;
                     HomesManager.TeleportationToHome(uplayer, buttonName);
                 }
             }
 
-            for (int i = 0; i <= 7; i++)//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!У нас спалки от 0 до 6
+            for (int i = 0; i <= 7; i++)
             {
                 if (buttonName == $"destroyHome{i}")
-                {
-                    Rocket.Core.Logging.Logger.Log("Вошли в условие destroyHome{i}");
                     HomesManager.DeleteHome(uplayer, ref buttonName);
-                }
             }
         }
 
@@ -64,10 +63,10 @@ namespace MultipleHomesUI
             UnturnedPlayer uplayer = UnturnedPlayer.FromPlayer(player);
 
             if (player.input.keys[11])//"/slash"
-            {
                 HomesManager.CallindUi(uplayer);
-            }
+
         }
+
 
         protected override void Unload()
         {

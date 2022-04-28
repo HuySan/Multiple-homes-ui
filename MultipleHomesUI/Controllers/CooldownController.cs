@@ -25,7 +25,7 @@ namespace MultipleHomesUI.Controllers
             int distinction = Plugin.instance.Configuration.Instance.cooldown - ((int)(DateTime.Now - lastCalled).TotalSeconds);
             if(distinction > 0)
             {
-                timeLeft = TimeSpan.FromSeconds(distinction).Seconds.ToString();
+                timeLeft = TimeSpan.FromSeconds(distinction).TotalSeconds.ToString();
                 // UnturnedChat.Say(uplayer, $"Вы снова сможете отправить тп на эту спалку через {timeLeft} сек");
                 return true;
             }
@@ -49,7 +49,6 @@ namespace MultipleHomesUI.Controllers
         {
             string stubTime = $"StubTime{homeId.Substring(4)}";
             string timeCount = $"TimeCount{homeId.Substring(4)}";
-            short key = Plugin.instance.Configuration.Instance.effectKey;
 
             if (!IsColldown(uplayer, ref homeId, out string timeLeft))
                 return;
@@ -62,14 +61,19 @@ namespace MultipleHomesUI.Controllers
             short key = Plugin.instance.Configuration.Instance.effectKey;
             while (true)
             {
-                EffectManager.sendUIEffectVisibility(key, uplayer.SteamPlayer().transportConnection, true, stubTime, true);
-                EffectManager.sendUIEffectText(key, uplayer.SteamPlayer().transportConnection, true, timeCount, timeLeft);
+                if (uplayer.SteamPlayer() != null) 
+                { 
+                    EffectManager.sendUIEffectVisibility(key, uplayer.SteamPlayer().transportConnection, true, stubTime, true);
+                    EffectManager.sendUIEffectText(key, uplayer.SteamPlayer().transportConnection, true, timeCount, timeLeft);
+                }
+
                 timeLeft = (int.Parse(timeLeft) - 1).ToString();
                 yield return new WaitForSeconds(1);
 
                 if (int.Parse(timeLeft) <= 0)
                 {
-                    EffectManager.sendUIEffectVisibility(key, uplayer.SteamPlayer().transportConnection, true, stubTime, false);
+                    if (uplayer.SteamPlayer() != null)
+                        EffectManager.sendUIEffectVisibility(key, uplayer.SteamPlayer().transportConnection, true, stubTime, false);
                     yield break;
                 }
             }

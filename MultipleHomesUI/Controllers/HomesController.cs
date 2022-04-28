@@ -106,10 +106,10 @@ namespace MultipleHomesUI
             return Color[homesCount];
         }
 
-        public static void DeletePlayerHome(this UnturnedPlayer player, string destroyHomeId, bool isDestroyer)
-        {           
+        public static void DeletePlayerHome(this UnturnedPlayer uplayer, string destroyHomeId, bool isDestroyer)
+        {
             //заполняем брешь
-            foreach(var id in HomesList.homes[player.CSteamID.m_SteamID])
+            foreach (var id in HomesList.homes[uplayer.CSteamID.m_SteamID])
             {
                 if (int.Parse(destroyHomeId.Substring(11)) < int.Parse(id.homeId.Substring(4)))
                 {
@@ -118,13 +118,12 @@ namespace MultipleHomesUI
                 }
             }
 
-            var idForRemove = HomesList.homes[player.CSteamID.m_SteamID].FirstOrDefault(r => r.homeId.ToLower() == destroyHomeId.Substring(7).ToLower());
-            var positionForRemove = HomesList.homes[player.CSteamID.m_SteamID].FirstOrDefault(r => r.position == idForRemove.position);
+            var idForRemove = HomesList.homes[uplayer.CSteamID.m_SteamID].FirstOrDefault(r => r.homeId.ToLower() == destroyHomeId.Substring(7).ToLower());
+            var positionForRemove = HomesList.homes[uplayer.CSteamID.m_SteamID].FirstOrDefault(r => r.position == idForRemove.position);
 
-            if(!isDestroyer)
+            if (!isDestroyer)
                 DestroyPhysicalHomeByPosition(positionForRemove.position);
-            HomesList.homes[player.CSteamID.m_SteamID].Remove(idForRemove);
-
+            HomesList.homes[uplayer.CSteamID.m_SteamID].Remove(idForRemove);
             Save();
         }
 
@@ -184,10 +183,28 @@ namespace MultipleHomesUI
             Plugin.instance.StartCoroutine(GoHome(uplayer, homeId));           
         }
 
+        private static bool ValidateTeleportation(this UnturnedPlayer uplayer, string homeId)
+        {
+            if (uplayer.Stance == EPlayerStance.DRIVING)
+            {
+                UnturnedChat.Say(uplayer, "IsDriving", Color.red);
+                return false;
+            }
+
+            if (uplayer.SteamPlayer() == null)
+                return false;
+
+            return true;
+        }
+
 
         private static IEnumerator GoHome(this UnturnedPlayer uplayer,  string homeId)
         {
             yield return new WaitForSeconds(_delay);
+
+            if (!ValidateTeleportation(uplayer, homeId))
+                yield break;
+
             if (HomesList.homes[uplayer.CSteamID.m_SteamID].Exists(x => x.homeId == homeId))
             {
                 var res = HomesList.homes[uplayer.CSteamID.m_SteamID].Where(x => x.homeId == homeId).ToList();

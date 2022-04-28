@@ -54,7 +54,13 @@ namespace MultipleHomesUI
             for (int i = 0; i <= 7; i++)
             {
                 if (buttonName == $"destroyHome{i}")
+                {
                     HomesManager.DeleteHome(uplayer, ref buttonName);
+                    foreach(string homeId in cooldowns[uplayer.CSteamID].Keys)
+                    {
+                        Rocket.Core.Logging.Logger.Log("Ид спалки в cooldowns " + homeId);
+                    }
+                }
             }
         }
 

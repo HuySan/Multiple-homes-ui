@@ -30,6 +30,7 @@ namespace MultipleHomesUI
         public static void TeleportationToHome(this UnturnedPlayer uplayer, string name)
         {    
             HomesController.PlayerTeleportationToHome(uplayer, name);
+      //      EffectManager.EffectTextCommittedHandlerc
         }
         
         private static void UpdateUi(this UnturnedPlayer uplayer)

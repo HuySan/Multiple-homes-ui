@@ -10,3 +10,5 @@ RenameUi:
 https://steamcommunity.com/sharedfiles/filedetails/?id=2803593326
 
 By default the workshop files are loaded automatically.
+
+Video demonstration: https://www.youtube.com/watch?v=I5VJkb6adiw&t=35s&ab_channel=JoeHunter

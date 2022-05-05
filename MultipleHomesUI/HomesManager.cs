@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Rocket.Core.Plugins;
-using MultipleHomesUI.HomeSettings;
-using Newtonsoft.Json;
-using Rocket.Unturned.Player;
+﻿using Rocket.Unturned.Player;
 using UnityEngine;
 using SDG.Unturned;
 using Rocket.Unturned.Chat;
@@ -19,6 +10,7 @@ namespace MultipleHomesUI
     {
         private static ushort _effectId = Plugin.instance.Configuration.Instance.effectId;
         private static short _effectKey = Plugin.instance.Configuration.Instance.effectKey;
+        private static HideShowDefaultUi _hideShowDefaultUi = new HideShowDefaultUi();
 
         public static void DeleteHome(this UnturnedPlayer uplayer, ref string destroyHomeId)
         {
@@ -30,7 +22,6 @@ namespace MultipleHomesUI
         public static void TeleportationToHome(this UnturnedPlayer uplayer, string name)
         {    
             HomesController.PlayerTeleportationToHome(uplayer, name);
-      //      EffectManager.EffectTextCommittedHandlerc
         }
         
         private static void UpdateUi(this UnturnedPlayer uplayer)
@@ -42,35 +33,23 @@ namespace MultipleHomesUI
         public static void CloseUi(this UnturnedPlayer uplayer)
         {
             EffectManager.askEffectClearByID(_effectId, uplayer.SteamPlayer().transportConnection);
-            ShowDefaultUi(uplayer.Player);
+            _hideShowDefaultUi.ShowDefaultUi(uplayer.Player);
         }
 
-        public static void HideDefaultUi(this Player player)
-        {
-            player.enablePluginWidgetFlag(EPluginWidgetFlags.Modal);
-            player.disablePluginWidgetFlag(EPluginWidgetFlags.Default);
-            
-        }
-
-        public static void ShowDefaultUi(this Player player)
-        {
-            player.disablePluginWidgetFlag(EPluginWidgetFlags.Modal);
-            player.enablePluginWidgetFlag(EPluginWidgetFlags.Default);
-            
-        }
 
         public static  void CallindUi(this UnturnedPlayer uplayer)
         {
             string[] homesId = HomesController.GetPlayerHomes(uplayer);
             string[] colors = HomesController.GetPlayerColors(uplayer);
+            string[] names = HomesController.GetHomesName(uplayer);
             TryCheckPhysicHome checkHome = new TryCheckPhysicHome();
             int i = 0;
 
-            HideDefaultUi(uplayer.Player);
+            _hideShowDefaultUi.HideDefaultUi(uplayer.Player);
 
             //Удаляем спальники из словаря, которые были уничтожены физическим путём
             if (checkHome.CompaireHomesPositions(uplayer))
-                UnturnedChat.Say(uplayer, "Некоторые спальники были уничтожены другими игроками или вами");
+                UnturnedChat.Say(uplayer, Plugin.instance.Translate("destroyed_bed"), Color.yellow);
 
 
             EffectManager.sendUIEffect(_effectId, _effectKey, uplayer.SteamPlayer().transportConnection, true);
@@ -85,7 +64,14 @@ namespace MultipleHomesUI
                 i++;
             }
 
-            HomesController.ShowAvailableHomes(uplayer);
+            i = 0;
+            foreach(var name in names)
+            {
+                EffectManager.sendUIEffectText(_effectKey, uplayer.SteamPlayer().transportConnection, true, "NameBed" + i, name.ToUpper());
+                i++;
+            }
+
+            HomesController.ShowAvailableHomes(uplayer, out _);
         }
     }
 }

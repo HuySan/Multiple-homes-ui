@@ -4,9 +4,6 @@ using SDG.Unturned;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace MultipleHomesUI.Controllers
@@ -26,7 +23,6 @@ namespace MultipleHomesUI.Controllers
             if(distinction > 0)
             {
                 timeLeft = TimeSpan.FromSeconds(distinction).TotalSeconds.ToString();
-                // UnturnedChat.Say(uplayer, $"Вы снова сможете отправить тп на эту спалку через {timeLeft} сек");
                 return true;
             }
             return false;

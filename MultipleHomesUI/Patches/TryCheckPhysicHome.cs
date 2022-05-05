@@ -57,7 +57,6 @@ namespace MultipleHomesUI.Patches
                     if(position == homesListItem.position)
                     {
                         HomesController.DeletePlayerHome(uplayer, "destroy" + homesListItem.homeId, true);
-                       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Plugin.instance.cooldowns[uplayer.CSteamID].Remove(homesListItem.homeId);
                         return true;                 
                     }
                 }

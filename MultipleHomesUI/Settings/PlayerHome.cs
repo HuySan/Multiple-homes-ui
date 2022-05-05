@@ -1,10 +1,4 @@
-﻿using SDG.Unturned;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MultipleHomesUI.HomeSettings
 {
@@ -13,12 +7,14 @@ namespace MultipleHomesUI.HomeSettings
         public string homeId;
         public Vector3 position;
         public string color;
+        public string name;
 
-        public PlayerHome(string homeId, Vector3 position, string color)
+        public PlayerHome(string homeId, Vector3 position, string color, string name)
         {
             this.homeId = homeId;
             this.position = position;
             this.color = color;
+            this.name = name;
         }
         public PlayerHome() { }
 

@@ -83,3 +83,4 @@ D:\UntPlugins\MultipleHomesUI\MultipleHomesUI\obj\Debug\MultipleHomesUI.csproj.C
 D:\UntPlugins\MultipleHomesUI\MultipleHomesUI\obj\Debug\MultipleHomesUI.csproj.CopyComplete
 D:\UntPlugins\MultipleHomesUI\MultipleHomesUI\obj\Debug\MultipleHomesUI.dll
 D:\UntPlugins\MultipleHomesUI\MultipleHomesUI\obj\Debug\MultipleHomesUI.pdb
+D:\UntPlugins\MultipleHomesUI\MultipleHomesUI\obj\Debug\MultipleHomesUI.csproj.AssemblyReference.cache

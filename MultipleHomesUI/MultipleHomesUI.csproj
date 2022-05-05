@@ -79,11 +79,14 @@
     <Reference Include="UnityEngine.InputModule">
       <HintPath>..\..\..\steam\steamapps\common\Unturned\Unturned_Data\Managed\UnityEngine.InputModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
     <Compile Include="Controllers\CooldownController.cs" />
     <Compile Include="Controllers\HomesController.cs" />
+    <Compile Include="Controllers\RenameController.cs" />
+    <Compile Include="Patches\HideShowDefaultUi.cs" />
     <Compile Include="Patches\TryCheckPhysicHome.cs" />
     <Compile Include="Settings\HomesList.cs" />
     <Compile Include="Settings\PlayerHome.cs" />

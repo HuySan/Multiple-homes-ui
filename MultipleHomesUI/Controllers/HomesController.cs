@@ -2,16 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Rocket.Core.Plugins;
 using MultipleHomesUI.HomeSettings;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Rocket.Unturned.Player;
 using UnityEngine;
 using SDG.Unturned;
-using System.Runtime.Serialization;
 using MultipleHomesUI.Controllers;
 using Rocket.Unturned.Chat;
 using System.Collections;
@@ -48,11 +43,12 @@ namespace MultipleHomesUI
             }
         }
         
-        public static void ShowAvailableHomes(this UnturnedPlayer uplayer)
+        public static void ShowAvailableHomes(this UnturnedPlayer uplayer, out bool isDestroyed)
         {
             int homeCount;
             string homeId;
             int bedCount = 0;
+            isDestroyed = false;
 
             foreach (BarricadeRegion region in BarricadeManager.regions)
             {
@@ -71,7 +67,8 @@ namespace MultipleHomesUI
                     if (bedCount > Plugin.instance.Configuration.Instance.maxHomes)
                     {
                         DestroyPhysicalHome(interactableBed);
-                        UnturnedChat.Say(uplayer, "Превышено кол-во допустимых спальников, поэтому последние добавленные были удалены");                       
+                        UnturnedChat.Say(uplayer, Plugin.instance.Translate("max_bed_exceeded"), Color.red);
+                        isDestroyed = true;
                         return;
                     }
 
@@ -84,13 +81,13 @@ namespace MultipleHomesUI
                         homeCount = HomesList.homes[uplayer.CSteamID.m_SteamID].Count;
                         homeId = "Home" + homeCount;
 
-                        HomesList.homes[uplayer.CSteamID.m_SteamID].Add(new PlayerHome(homeId, interactableBed.transform.position, GiveColor(homeCount)));
+                        HomesList.homes[uplayer.CSteamID.m_SteamID].Add(new PlayerHome(homeId, interactableBed.transform.position, GiveColor(homeCount), "UNNAMED BED"));
                         EffectManager.sendUIEffectVisibility(_key, uplayer.SteamPlayer().transportConnection, true, homeId, true);
                         EffectManager.sendUIEffectImageURL(_key, uplayer.SteamPlayer().transportConnection, true, homeId, $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/{GiveColor(homeCount)}.png");
                     }
                     else
                     {
-                        HomesList.homes.Add(uplayer.CSteamID.m_SteamID, new List<PlayerHome> { new PlayerHome("Home0", interactableBed.transform.position, "Blue") });
+                        HomesList.homes.Add(uplayer.CSteamID.m_SteamID, new List<PlayerHome> { new PlayerHome("Home0", interactableBed.transform.position, "Blue", "UNNAMED BED") });
                         EffectManager.sendUIEffectVisibility(_key, uplayer.SteamPlayer().transportConnection, true, "Home0", true);
                         EffectManager.sendUIEffectImageURL(_key, uplayer.SteamPlayer().transportConnection, true, "Home0", $"https://raw.githubusercontent.com/HuySan/Homes-Color-png/main/Blue.png");
                     }
@@ -167,6 +164,13 @@ namespace MultipleHomesUI
             return new string[0];
         }
 
+        public static string[] GetHomesName(this UnturnedPlayer uplayer)
+        {
+            if (HomesList.homes.ContainsKey(uplayer.CSteamID.m_SteamID))
+                return HomesList.homes[uplayer.CSteamID.m_SteamID].Select(x => x.name).ToArray();
+            return new string[0];
+        }
+
         public static string[] GetPlayerColors(this UnturnedPlayer uplayer)
         {
             if (HomesList.homes.ContainsKey(uplayer.CSteamID.m_SteamID))
@@ -178,7 +182,7 @@ namespace MultipleHomesUI
         public static void PlayerTeleportationToHome(this UnturnedPlayer uplayer, string homeId)
         {             
             if (_delay != 0)
-                UnturnedChat.Say(uplayer, $"Вы будете телепортированы через {_delay} сек");
+                UnturnedChat.Say(uplayer, Plugin.instance.Translate("delay", _delay), Color.yellow);
             CooldownController.SetCooldown(uplayer, homeId);
             Plugin.instance.StartCoroutine(GoHome(uplayer, homeId));           
         }
@@ -187,7 +191,7 @@ namespace MultipleHomesUI
         {
             if (uplayer.Stance == EPlayerStance.DRIVING)
             {
-                UnturnedChat.Say(uplayer, "IsDriving", Color.red);
+                UnturnedChat.Say(uplayer, Plugin.instance.Translate("isDriving"), Color.red);
                 return false;
             }
 

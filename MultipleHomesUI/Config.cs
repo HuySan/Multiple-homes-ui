@@ -16,6 +16,8 @@ namespace MultipleHomesUI
         public short effectKeyRenameBtn;
         public int cooldown;
         public int delay;
+        public bool downloadWorkshopHomedUi;
+        public bool downloadWorkshopRenameUi;
         public void LoadDefaults()
         {
             delay = 5;
@@ -23,8 +25,10 @@ namespace MultipleHomesUI
             maxHomes = 7;
             effectId = 7394;
             effectKey = 7394;
-            effectIdRenameBtn = 7494;
-            effectKeyRenameBtn = 7494;
+            effectIdRenameBtn = 7495;
+            effectKeyRenameBtn = 7495;
+            downloadWorkshopHomedUi = true;
+            downloadWorkshopRenameUi = true;
         }
     }
 }
